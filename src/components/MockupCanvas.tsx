@@ -83,7 +83,7 @@ export function MockupCanvas({
                 const canvas = canvasRef.current;
                 if (!canvas || !preset) return;
                 const point = canvasPoint(canvas, event.clientX, event.clientY);
-                const layouts = getLayerLayouts(preset, settings);
+                const layouts = getLayerLayouts(preset, settings, shots);
                 const index = pickLayer(
                   point.x,
                   point.y,

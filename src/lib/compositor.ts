@@ -73,9 +73,15 @@ function drawEnvironment(
   }
 }
 
+function slotImage(shots: ShotList | undefined, shot: number) {
+  if (!shots?.length) return null;
+  return shots[shot]?.element ?? shots.find((item) => item)?.element ?? null;
+}
+
 export function getLayerLayouts(
   preset: MockupPreset,
   settings: MockupSettings,
+  shots?: ShotList,
 ): LayerLayout[] {
   return settings.devices.map((device, index) => {
     const slot = preset.devices[index];
@@ -83,7 +89,7 @@ export function getLayerLayouts(
       return { index, x: device.x, y: device.y, width: 0, height: 0, rotation: device.rotation };
     }
     const width = slot.width * device.scale;
-    const size = measureDevice(slot.type, width);
+    const size = measureDevice(slot.type, width, slotImage(shots, slot.shot));
     return {
       index,
       x: device.x,
@@ -118,15 +124,14 @@ export function renderMockup(
   ctx.imageSmoothingQuality = "high";
   drawEnvironment(ctx, preset, options.settings.background);
 
-  const layouts = getLayerLayouts(preset, options.settings);
+  const layouts = getLayerLayouts(preset, options.settings, options.shots);
 
   for (const index of options.settings.deviceOrder) {
     const slot = preset.devices[index];
     const device = options.settings.devices[index];
     const layout = layouts[index];
     if (!slot || !device || !layout) continue;
-    const first = options.shots.find((shot) => shot)?.element ?? null;
-    const image = options.shots[slot.shot]?.element ?? first;
+    const image = slotImage(options.shots, slot.shot);
     const width = slot.width * device.scale;
 
     ctx.save();

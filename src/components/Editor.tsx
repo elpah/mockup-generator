@@ -54,8 +54,12 @@ export function Editor({
     let next = { ...current, ...patch };
 
     if (patch.scale != null && patch.x == null && patch.y == null) {
-      const oldSize = measureDevice(slot.type, slot.width * current.scale);
-      const newSize = measureDevice(slot.type, slot.width * patch.scale);
+      const image =
+        images[slot.shot]?.element ??
+        images.find((item) => item)?.element ??
+        null;
+      const oldSize = measureDevice(slot.type, slot.width * current.scale, image);
+      const newSize = measureDevice(slot.type, slot.width * patch.scale, image);
       next = {
         ...next,
         x: current.x + (oldSize.w - newSize.w) / 2,

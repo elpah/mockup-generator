@@ -1,4 +1,5 @@
 import {
+  CANVAS_HEIGHT,
   CANVAS_WIDTH,
   DISPLAY_ASPECT,
   PHONE_ASPECT,
@@ -6,6 +7,34 @@ import {
   TABLET_PORTRAIT_ASPECT,
   type DeviceType,
 } from "./types";
+
+export type DeviceImageSource =
+  | HTMLImageElement
+  | { width: number; height: number }
+  | null
+  | undefined;
+
+function sourceSize(image?: DeviceImageSource) {
+  if (!image) return null;
+  const w =
+    image instanceof HTMLImageElement
+      ? image.naturalWidth || image.width
+      : image.width;
+  const h =
+    image instanceof HTMLImageElement
+      ? image.naturalHeight || image.height
+      : image.height;
+  return w > 0 && h > 0 ? { w, h } : null;
+}
+
+function screenSizeForImage(width: number, image?: DeviceImageSource) {
+  const src = sourceSize(image);
+  if (!src) return { w: width, h: width / DISPLAY_ASPECT };
+  return {
+    w: width,
+    h: Math.min(width * (src.h / src.w), CANVAS_HEIGHT * 3),
+  };
+}
 
 export function roundedRect(
   ctx: CanvasRenderingContext2D,
@@ -75,10 +104,14 @@ export function laptopGeometry(type: LaptopKind, width: number) {
   };
 }
 
-export function measureDevice(type: DeviceType, width: number) {
+export function measureDevice(
+  type: DeviceType,
+  width: number,
+  image?: DeviceImageSource,
+) {
   switch (type) {
     case "screen":
-      return { w: width, h: width / DISPLAY_ASPECT };
+      return screenSizeForImage(width, image);
     case "browser-chrome":
       return { w: width, h: 52 + (width - 4) / DISPLAY_ASPECT };
     case "browser-safari":
@@ -110,11 +143,15 @@ export function measureDevice(type: DeviceType, width: number) {
   }
 }
 
-export function screenRect(type: DeviceType, width: number) {
+export function screenRect(
+  type: DeviceType,
+  width: number,
+  image?: DeviceImageSource,
+) {
   switch (type) {
     case "screen": {
-      const { h } = measureDevice(type, width);
-      return { x: 0, y: 0, w: width, h, r: 18 };
+      const size = measureDevice(type, width, image);
+      return { x: 0, y: 0, w: size.w, h: size.h, r: 18 };
     }
     case "browser-chrome":
       return { x: 2, y: 52, w: width - 4, h: (width - 4) / DISPLAY_ASPECT, r: 0 };
@@ -683,10 +720,10 @@ function drawScreen(
   pixelRatio: number,
   intensity: number,
 ) {
-  const { h } = measureDevice("screen", width);
-  shadow(ctx, 0, 0, width, h, 22, intensity);
-  const shot = clippedScreen(image, width, h, 22, pixelRatio);
-  paintScreen(ctx, shot, 0, 0, width, h);
+  const size = measureDevice("screen", width, image);
+  shadow(ctx, 0, 0, size.w, size.h, 22, intensity);
+  const shot = clippedScreen(image, size.w, size.h, 22, pixelRatio);
+  paintScreen(ctx, shot, 0, 0, size.w, size.h);
 }
 
 export function drawDeskAccessories(
